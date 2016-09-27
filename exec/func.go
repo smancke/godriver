@@ -16,6 +16,6 @@ func (s *FuncExec) String() string {
 	return s.name
 }
 
-func (s *FuncExec) Exec(cntx ExecutionContext) error {
+func (s *FuncExec) Exec(cntx Context) error {
 	return s.f()
 }

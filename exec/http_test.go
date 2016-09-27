@@ -2,6 +2,7 @@ package exec
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,7 +20,7 @@ var html = `<html>
 
 func Test_Http_Get(t *testing.T) {
 	a := assert.New(t)
-	cntx := ExecutionContextImpl{}
+	cntx := &ContextImpl{}
 
 	server := httptest.NewServer(http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		resp.Write([]byte(html))
@@ -59,7 +60,7 @@ func Test_Http_Get(t *testing.T) {
 
 func Test_Http_Get500(t *testing.T) {
 	a := assert.New(t)
-	cntx := ExecutionContextImpl{}
+	cntx := &ContextImpl{}
 
 	server := httptest.NewServer(http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(500)
@@ -73,5 +74,34 @@ func Test_Http_Get500(t *testing.T) {
 		Exec(cntx))
 	a.NoError(Get(server.URL).
 		HasCodeRange(400, 600).
+		Exec(cntx))
+}
+
+func Test_Http_Post(t *testing.T) {
+	a := assert.New(t)
+	cntx := NewDefaultContext()
+
+	server := httptest.NewServer(http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+		// echo service
+		resp.Header().Set("Content-Type", req.Header.Get("Content-Type"))
+		body, _ := ioutil.ReadAll(req.Body)
+		resp.Write(body)
+	}))
+	defer server.Close()
+
+	a.NoError(Post(server.URL, "application/foo", "demo data").
+		HasContentType("application/foo").
+		Contains("demo data").
+		Exec(cntx))
+
+	a.Error(Post(server.URL, "application/foo", "demo data").
+		HasContentType("application/bar").
+		Exec(cntx))
+
+	a.Error(Post(server.URL, "application/foo", "demo data").
+		Contains("wrong data").
+		Exec(cntx))
+
+	a.Error(Post("h :// invalid", "application/foo", "demo data").
 		Exec(cntx))
 }

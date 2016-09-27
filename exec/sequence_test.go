@@ -8,7 +8,7 @@ import (
 
 func Test_Sequence(t *testing.T) {
 	a := assert.New(t)
-	cntx := ExecutionContextImpl{}
+	cntx := NewDefaultContext()
 
 	result := make(chan string, 3)
 

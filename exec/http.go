@@ -1,16 +1,20 @@
 package exec
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
 type HttpExec struct {
-	req              *http.Request
-	initError        error
+	Method           string
+	Url              string
+	Header           http.Header
+	Body             []byte
 	expectations     []HttpExpectation
 	codeExpectionSet bool
 }
@@ -18,24 +22,34 @@ type HttpExec struct {
 type HttpExpectation func(response *http.Response, body string) error
 
 func Get(url string) *HttpExec {
-	r, err := http.NewRequest("GET", url, nil)
 	return &HttpExec{
-		req:       r,
-		initError: err,
+		Method: "GET",
+		Url:    url,
+		Header: http.Header{},
 	}
 }
 
 func Post(url string, contentType string, body string) *HttpExec {
-	r, err := http.NewRequest("POST", url, strings.NewReader(body))
-	r.Header.Set("Content-Type", contentType)
 	return &HttpExec{
-		req:       r,
-		initError: err,
+		Method: "POST",
+		Url:    url,
+		Body:   []byte(body),
+		Header: http.Header{"Content-Type": {contentType}},
 	}
 }
 
+func (httpExec *HttpExec) WithAuthorization(authorizationHeader string) *HttpExec {
+	httpExec.Header.Set("Authorization", authorizationHeader)
+	return httpExec
+}
+
+func (httpExec *HttpExec) WithBasicAuth(username, password string) *HttpExec {
+	enc := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	return httpExec.WithAuthorization("Basic " + enc)
+}
+
 func (httpExec *HttpExec) String() string {
-	return fmt.Sprintf("->%v %v", httpExec.req.Method, httpExec.req.URL.String())
+	return fmt.Sprintf("->%v %v", httpExec.Method, httpExec.Url)
 }
 
 func (httpExec *HttpExec) Expect(e HttpExpectation) {
@@ -113,12 +127,36 @@ func (httpExec *HttpExec) SelectorContains(selector, substring string) *HttpExec
 	return httpExec
 }
 
-func (httpExec *HttpExec) Exec(cntx ExecutionContext) error {
-	if httpExec.initError != nil {
-		return httpExec.initError
+func (httpExec *HttpExec) Exec(cntx Context) error {
+	url, err := cntx.ExpandVars(string(httpExec.Url))
+	if err != nil {
+		return err
 	}
 
-	resp, err := http.DefaultClient.Do(httpExec.req)
+	var bodyReader io.Reader
+	if len(httpExec.Body) > 0 {
+		body, err := cntx.ExpandVars(string(httpExec.Body))
+		if err != nil {
+			return err
+		}
+		bodyReader = strings.NewReader(body)
+	}
+
+	req, err := http.NewRequest(httpExec.Method, url, bodyReader)
+	if err != nil {
+		return err
+	}
+
+	req.Header = http.Header{}
+	for k, _ := range httpExec.Header {
+		v, err := cntx.ExpandVars(string(httpExec.Header.Get(k)))
+		if err != nil {
+			return err
+		}
+		req.Header.Set(k, v)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

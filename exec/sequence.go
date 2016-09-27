@@ -16,7 +16,7 @@ func (s *SequenceExec) String() string {
 	return s.name
 }
 
-func (s *SequenceExec) Exec(cntx ExecutionContext) error {
+func (s *SequenceExec) Exec(cntx Context) error {
 	for _, step := range s.steps {
 		err := step.Exec(cntx)
 		if err != nil {
