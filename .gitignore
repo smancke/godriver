@@ -2,6 +2,7 @@
 *.o
 *.a
 *.so
+cover.out
 
 # Folders
 _obj
