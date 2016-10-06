@@ -28,7 +28,7 @@ func Test_Context_Derive(t *testing.T) {
 func Test_Context_ExpandVars(t *testing.T) {
 	a := assert.New(t)
 
-	cntx := NewContext(1, 1, map[string]string{
+	cntx := NewContext(map[string]string{
 		"host": "example.com",
 	})
 	cntx.Test()["id"] = "4711"
@@ -48,8 +48,8 @@ func Test_Context_ExpandVars(t *testing.T) {
 func Test_Context_Populate(t *testing.T) {
 	a := assert.New(t)
 
-	cntx := NewContext(3, 1, nil)
-	testContextChannel := cntx.Populate(func(testNumber int) map[string]string {
+	cntx := NewContext(nil)
+	testContextChannel := cntx.Populate(3, func(testNumber int) map[string]string {
 		return map[string]string{
 			"contextNumber": strconv.Itoa(testNumber),
 		}

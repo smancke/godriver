@@ -36,6 +36,9 @@ func newParallelExecuter(spec Exec, contextList chan Context) *parallelExecuter 
 }
 
 func (ex *parallelExecuter) start(workerCount int) {
+	if workerCount == 0 {
+		workerCount = 1
+	}
 	for i := 0; i < workerCount; i++ {
 		ex.runningWorker.Add(1)
 		go ex.startWorker()
@@ -49,7 +52,7 @@ func (ex *parallelExecuter) waitAndClose() {
 
 func (ex *parallelExecuter) startWorker() {
 	for cntx := range ex.contextList {
-		execution := StartExecution(ex.spec.String())
+		execution := StartExecution(ex.spec.String(cntx))
 		err := ex.spec.Exec(cntx)
 		execution.End(err)
 		ex.results <- execution

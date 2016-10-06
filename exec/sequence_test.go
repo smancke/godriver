@@ -1,7 +1,7 @@
 package exec
 
 import (
-	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -24,7 +24,7 @@ func Test_Sequence(t *testing.T) {
 		}),
 		F("Test c", func() error {
 			result <- "c"
-			return errors.New("c has an error")
+			return fmt.Errorf("c has an error")
 		}),
 		F("Test d", func() error {
 			result <- "d"
