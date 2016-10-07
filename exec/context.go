@@ -33,14 +33,6 @@ type Context interface {
 	// The creation is done in a go routine and supplied over returned channel.
 	// The channel will be closed afer sending the last entry.
 	Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context
-
-	// Start the execution of a test step
-	// An execution is a processing step
-	//StartExecution(stepTitle string) *Execution
-
-	// Start the execution of a test step
-	// An execution is a processing step
-	//StartTest(stepTitle string) *Execution
 }
 
 type ContextImpl struct {
