@@ -36,23 +36,29 @@ func (repo *Repository) Add(szenario *TestScenario, testgroup string, concurrenc
 }
 
 // Run all testScenarios, which match the supplied filter criterias.
-func (repo *Repository) RunTestScenarios(testgroupRegex string, nameRegex string, tagPatterns ...string) {
+func (repo *Repository) RunTestScenarios(testgroupRegex string, nameRegex string, tagPatterns ...string) map[*repositoryEntry][]*Execution {
+	scenarioExecutions := make(map[*repositoryEntry][]*Execution)
 	for _, t := range repo.testScenarios {
 		if matched, err := regexp.MatchString(nameRegex, t.testScenario.Name); err == nil && matched {
 			if matched, err := regexp.MatchString(testgroupRegex, t.testgroup); err == nil && matched {
 				if allTagsContained(t.tags, tagPatterns) {
-					runTestScenario(t)
+					executions := runTestScenario(t)
+					scenarioExecutions[t] = executions
 				}
 			}
 		}
 	}
+	return scenarioExecutions
 }
 
-func runTestScenario(t *repositoryEntry) {
+func runTestScenario(t *repositoryEntry) []*Execution {
+	executions := []*Execution{}
 	results := RunParallel(t.concurrency, t.testScenario.Exec, t.testScenario.ContextChannelFactory())
 	for result := range results {
+		executions = append(executions, result)
 		println(result.String())
 	}
+	return executions
 }
 
 func allTagsContained(tags []string, tagRegex []string) bool {
