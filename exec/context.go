@@ -49,9 +49,7 @@ type ContextImpl struct {
 	testNumber int
 }
 
-// NewDefaultContext creates a new context without data and
-// - executionCount = 1
-// - executionConcurrency = 1
+// NewDefaultContext creates a new context without data
 func NewDefaultContext() *ContextImpl {
 	return &ContextImpl{
 		env:        make(map[string]string),
@@ -61,8 +59,6 @@ func NewDefaultContext() *ContextImpl {
 }
 
 // NewContext creates a new context
-// - executionCount number of executions
-// - executionConcurrency number of parallel workers
 // - env base data, which ma be nil
 func NewContext(env map[string]string) *ContextImpl {
 	cntx := &ContextImpl{
