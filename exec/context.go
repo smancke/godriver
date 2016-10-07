@@ -9,12 +9,6 @@ type Context interface {
 	// TestNumber is the numer of the actual test.
 	TestNumber() int
 
-	// ExecutionCount is the total number of test executions for a given test.
-	ExecutionCount() int
-
-	// ExecutionConcurrency is the number of parallel workers, which should be used.
-	ExecutionConcurrency() int
-
 	// Test returns the configuration data
 	// for a single test interation.
 	Test() map[string]string
@@ -26,6 +20,9 @@ type Context interface {
 	// ExpandVars executes the supplied go template with the context as data context
 	ExpandVars(template string) (string, error)
 
+	// ExpandVarsNoError Same as expand vars, but returnning template it self in case of an error
+	ExpandVarsNoError(template string) string
+
 	// Derive creates a copy of the context, where the test data is
 	// field wise overwritten by the supplied test data and the
 	// test number is incremented.
@@ -35,54 +32,44 @@ type Context interface {
 	// It calls the supplied closure for each test and derives a new Context using the test data returned by the supplied function.
 	// The creation is done in a go routine and supplied over returned channel.
 	// The channel will be closed afer sending the last entry.
-	Populate(createTestDataClosure func(testNumber int) map[string]string) chan Context
+	Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context
+
+	// Start the execution of a test step
+	// An execution is a processing step
+	//StartExecution(stepTitle string) *Execution
+
+	// Start the execution of a test step
+	// An execution is a processing step
+	//StartTest(stepTitle string) *Execution
 }
 
 type ContextImpl struct {
-	test                 map[string]string
-	env                  map[string]string
-	testNumber           int
-	executionCount       int
-	executionConcurrency int
+	test       map[string]string
+	env        map[string]string
+	testNumber int
 }
 
-// NewDefaultContext creates a new context without data and
-// - executionCount = 1
-// - executionConcurrency = 1
+// NewDefaultContext creates a new context without data
 func NewDefaultContext() *ContextImpl {
 	return &ContextImpl{
-		env:                  make(map[string]string),
-		test:                 make(map[string]string),
-		testNumber:           0,
-		executionCount:       1,
-		executionConcurrency: 1,
+		env:        make(map[string]string),
+		test:       make(map[string]string),
+		testNumber: 0,
 	}
 }
 
 // NewContext creates a new context
-// - executionCount number of executions
-// - executionConcurrency number of parallel workers
-// - env base data, which may be nil
-func NewContext(executionCount, executionConcurrency int, env map[string]string) *ContextImpl {
+// - env base data, which ma be nil
+func NewContext(env map[string]string) *ContextImpl {
 	cntx := &ContextImpl{
-		env:                  env,
-		test:                 make(map[string]string),
-		testNumber:           0,
-		executionCount:       executionCount,
-		executionConcurrency: executionConcurrency,
+		env:        env,
+		test:       make(map[string]string),
+		testNumber: 0,
 	}
 	if cntx.env == nil {
 		cntx.env = make(map[string]string)
 	}
 	return cntx
-}
-
-func (cntx *ContextImpl) ExecutionCount() int {
-	return cntx.executionCount
-}
-
-func (cntx *ContextImpl) ExecutionConcurrency() int {
-	return cntx.executionConcurrency
 }
 
 func (cntx *ContextImpl) Env() map[string]string {
@@ -95,6 +82,14 @@ func (cntx *ContextImpl) Test() map[string]string {
 
 func (cntx *ContextImpl) TestNumber() int {
 	return cntx.testNumber
+}
+
+func (cntx *ContextImpl) ExpandVarsNoError(tpl string) string {
+	result, err := cntx.ExpandVars(tpl)
+	if err != nil {
+		return tpl
+	}
+	return result
 }
 
 func (cntx *ContextImpl) ExpandVars(tpl string) (string, error) {
@@ -123,12 +118,12 @@ func (cntx *ContextImpl) Derive(overrideValues map[string]string) Context {
 	return &contextCopy
 }
 
-func (cntx *ContextImpl) Populate(createTestDataClosure func(testNumber int) map[string]string) chan Context {
+func (cntx *ContextImpl) Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context {
 	resultChannel := make(chan Context)
 	go func() {
 		var currentContext Context
 		currentContext = cntx
-		for i := cntx.TestNumber() + 1; i <= cntx.ExecutionCount(); i++ {
+		for i := cntx.TestNumber() + 1; i <= n; i++ {
 			currentContext = currentContext.Derive(createTestDataClosure(i))
 			resultChannel <- currentContext
 		}

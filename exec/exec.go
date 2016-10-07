@@ -8,5 +8,5 @@ type Exec interface {
 	Exec(cntx Context) error
 
 	// String returns the description for the step
-	String() string
+	String(cntx Context) string
 }

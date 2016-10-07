@@ -1,9 +1,9 @@
 package exec
 
 import (
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"errors"
 )
 
 func Test_Sequence(t *testing.T) {

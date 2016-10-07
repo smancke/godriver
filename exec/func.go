@@ -12,8 +12,8 @@ func F(name string, f func() error) *FuncExec {
 	}
 }
 
-func (s *FuncExec) String() string {
-	return s.name
+func (s *FuncExec) String(cntx Context) string {
+	return cntx.ExpandVarsNoError(s.name)
 }
 
 func (s *FuncExec) Exec(cntx Context) error {

@@ -48,8 +48,8 @@ func (httpExec *HttpExec) WithBasicAuth(username, password string) *HttpExec {
 	return httpExec.WithAuthorization("Basic " + enc)
 }
 
-func (httpExec *HttpExec) String() string {
-	return fmt.Sprintf("->%v %v", httpExec.Method, httpExec.Url)
+func (httpExec *HttpExec) String(cntx Context) string {
+	return cntx.ExpandVarsNoError(fmt.Sprintf("->%v %v", httpExec.Method, httpExec.Url))
 }
 
 func (httpExec *HttpExec) Expect(e HttpExpectation) {
