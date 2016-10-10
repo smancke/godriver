@@ -1,5 +1,7 @@
 # godriver
 
+[![Build Status](https://api.travis-ci.org/smancke/godriver.svg)](https://travis-ci.org/smancke/godriver) [![Coverage Status](https://coveralls.io/repos/smancke/godriver/badge.svg?branch=master&service=github)](https://coveralls.io/github/smancke/godriver?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/smancke/godriver)](https://goreportcard.com/report/github.com/smancke/godriver)
+
 test and load test driver written in go
 
 
