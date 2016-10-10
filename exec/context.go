@@ -6,11 +6,11 @@ import (
 )
 
 type Context interface {
-	// TestNumber is the numer of the actual test.
+	// TestNumber is the number of the actual test.
 	TestNumber() int
 
 	// Test returns the configuration data
-	// for a single test interation.
+	// for a single test integration.
 	Test() map[string]string
 
 	// Env returns the environment configuration which is common for all
@@ -20,7 +20,7 @@ type Context interface {
 	// ExpandVars executes the supplied go template with the context as data context
 	ExpandVars(template string) (string, error)
 
-	// ExpandVarsNoError Same as expand vars, but returnning template it self in case of an error
+	// ExpandVarsNoError Same as expand vars, but returning template it self in case of an error
 	ExpandVarsNoError(template string) string
 
 	// Derive creates a copy of the context, where the test data is
