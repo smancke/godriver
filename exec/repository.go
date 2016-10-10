@@ -35,7 +35,7 @@ func (repo *Repository) Add(szenario *TestScenario, testgroup string, concurrenc
 		})
 }
 
-// Run all testScenarios, which match the supplied filter criterias.
+// Run all testScenarios, which match the supplied filter criteria.
 func (repo *Repository) RunTestScenarios(testgroupRegex string, nameRegex string, tagPatterns ...string) {
 	for _, t := range repo.testScenarios {
 		if matched, err := regexp.MatchString(nameRegex, t.testScenario.Name); err == nil && matched {
