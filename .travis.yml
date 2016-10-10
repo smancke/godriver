@@ -1,14 +1,17 @@
 language: go
 
 go:
- - 1.6
- - 1.7
- - release
  - tip
 
 before_install:
- - go get github.com/PuerkitoBio/goquery
- - go get github.com/stretchr/testify
+ - go get github.com/wadey/gocovmerge
+ - go get github.com/mattn/goveralls
+ - go get golang.org/x/tools/cmd/cover
+ - go get -t ./...
 
 script:
  - go test -v ./...
+
+after_success:
+ - ./.generate_coverage.sh
+ - goveralls -coverprofile=full_cov.out -service=travis-ci
