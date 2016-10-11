@@ -3,6 +3,7 @@ package exec
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"errors"
 )
 
 var mockResult = ""
@@ -24,6 +25,12 @@ func newMockExec(scenarioName string) Exec {
 			mockResult += "," + scenarioName
 		}
 		return nil
+	})
+}
+
+func newMockErrorExecution(scenarioName string) Exec {
+	return F(scenarioName, func() error {
+		return errors.New("Wanted error on \"" + scenarioName + "\"")
 	})
 }
 
@@ -67,4 +74,26 @@ func Test_Repository(t *testing.T) {
 	mockResult = ""
 	repo.RunTestScenarios("", "", "bazz")
 	a.Equal("spec12", mockResult)
+}
+
+func Test_ErrorExecutions_Nil(t *testing.T) {
+	repo := NewRepository()
+	assert.Nil(t, repo.GetErrorExecutions())
+}
+
+func Test_ErrorExecutions_Empty(t *testing.T) {
+	repo := NewRepository()
+	repo.Add(NewTestScenario("", newMockExec("Test_ErrorExecutionsEmpty"), newChannelFactory()), "groupppp", 0)
+	repo.RunTestScenarios("groupppp", "")
+
+	assert.Empty(t, repo.GetErrorExecutions())
+}
+
+func Test_ErrorExecutions_NotEmpty(t *testing.T) {
+	repo := NewRepository()
+	repo.Add(NewTestScenario("", newMockErrorExecution("Test_ErrorExecutionsNotEmpty"),
+		newChannelFactory()), "ggggroup", 0)
+	repo.RunTestScenarios("ggggroup", "")
+
+	assert.NotEmpty(t, repo.GetErrorExecutions())
 }
