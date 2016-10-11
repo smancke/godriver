@@ -10,14 +10,14 @@ type Execution struct {
 	end      time.Time
 	jobTitle string
 	err      error
-	context Context
+	context  Context
 }
 
 func StartExecution(jobTitle string, context *Context) *Execution {
 	return &Execution{
 		start:    time.Now(),
 		jobTitle: jobTitle,
-		context: *context,
+		context:  *context,
 	}
 }
 
