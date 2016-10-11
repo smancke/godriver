@@ -6,16 +6,18 @@ import (
 )
 
 type Execution struct {
-	start    time.Time
-	end      time.Time
-	jobTitle string
-	err      error
+	start         time.Time
+	end           time.Time
+	jobTitle      string
+	err           error
+	correlationId string
 }
 
-func StartExecution(jobTitle string) *Execution {
+func StartExecution(jobTitle string, correlationId string) *Execution {
 	return &Execution{
-		start:    time.Now(),
-		jobTitle: jobTitle,
+		start:         time.Now(),
+		jobTitle:      jobTitle,
+		correlationId: correlationId,
 	}
 }
 
@@ -30,8 +32,8 @@ func (execution *Execution) Duration() time.Duration {
 
 func (execution *Execution) String() string {
 	if execution.err == nil {
-		return fmt.Sprintf("%v %v", execution.Duration(), execution.jobTitle)
+		return fmt.Sprintf("%v %v %v", execution.Duration(), execution.jobTitle, execution.correlationId)
 	} else {
-		return fmt.Sprintf("%v %v: %v", execution.Duration(), execution.jobTitle, execution.err)
+		return fmt.Sprintf("%v %v: %v %v", execution.Duration(), execution.jobTitle, execution.err, execution.correlationId)
 	}
 }

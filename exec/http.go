@@ -155,6 +155,7 @@ func (httpExec *HttpExec) Exec(cntx Context) error {
 		}
 		req.Header.Set(k, v)
 	}
+	req.Header.Add("X-Correlation-Id", cntx.CorrelationId())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
