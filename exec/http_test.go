@@ -30,7 +30,7 @@ func Test_Http_Get(t *testing.T) {
 	a.Error(Get("h :// invalid").Exec(cntx))
 	a.NoError(Get(server.URL).Exec(cntx))
 
-	// Content-Tyoe
+	// Content-type
 	a.NoError(Get(server.URL).HasContentType("text/html").Exec(cntx))
 	a.Error(Get(server.URL).HasContentType("text/plain").Exec(cntx))
 

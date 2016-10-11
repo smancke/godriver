@@ -5,29 +5,29 @@ import (
 )
 
 // Run does the same as RunParallel, but in one goroutine.
-func Run(workerCount int, spec Exec, contextList chan Context) chan *Execution {
+func Run(spec Exec, contextList chan Context) chan *Execution {
 	return RunParallel(1, spec, contextList)
 }
 
 // RunParallel executes the supplied exec with each context from the channel.
 // Each execution result ist returned over the result channel, which will be
-// closed afer the last execution.
+// closed after the last execution.
 func RunParallel(workerCount int, spec Exec, contextList chan Context) chan *Execution {
-	ex := newParallelExecuter(spec, contextList)
+	ex := newParallelExecutor(spec, contextList)
 	ex.start(workerCount)
 	go ex.waitAndClose()
 	return ex.results
 }
 
-type parallelExecuter struct {
+type parallelExecutor struct {
 	contextList   chan Context
 	spec          Exec
 	runningWorker sync.WaitGroup
 	results       chan *Execution
 }
 
-func newParallelExecuter(spec Exec, contextList chan Context) *parallelExecuter {
-	return &parallelExecuter{
+func newParallelExecutor(spec Exec, contextList chan Context) *parallelExecutor {
+	return &parallelExecutor{
 		contextList:   contextList,
 		spec:          spec,
 		runningWorker: sync.WaitGroup{},
@@ -35,7 +35,7 @@ func newParallelExecuter(spec Exec, contextList chan Context) *parallelExecuter 
 	}
 }
 
-func (ex *parallelExecuter) start(workerCount int) {
+func (ex *parallelExecutor) start(workerCount int) {
 	if workerCount == 0 {
 		workerCount = 1
 	}
@@ -45,12 +45,12 @@ func (ex *parallelExecuter) start(workerCount int) {
 	}
 }
 
-func (ex *parallelExecuter) waitAndClose() {
+func (ex *parallelExecutor) waitAndClose() {
 	ex.runningWorker.Wait()
 	close(ex.results)
 }
 
-func (ex *parallelExecuter) startWorker() {
+func (ex *parallelExecutor) startWorker() {
 	for cntx := range ex.contextList {
 		execution := StartExecution(ex.spec.String(cntx))
 		err := ex.spec.Exec(cntx)

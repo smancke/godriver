@@ -31,7 +31,7 @@ type Context interface {
 	// Populate can be used to create test data for the number of ExecutionCount tests.
 	// It calls the supplied closure for each test and derives a new Context using the test data returned by the supplied function.
 	// The creation is done in a go routine and supplied over returned channel.
-	// The channel will be closed afer sending the last entry.
+	// The channel will be closed after sending the last entry.
 	Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context
 }
 
