@@ -11,7 +11,7 @@ type Repository struct {
 
 type repositoryEntry struct {
 	concurrency  int
-	testgroup    string
+	testGroup    string
 	tags         []string
 	testScenario *TestScenario
 }
@@ -25,21 +25,21 @@ func NewRepository() *Repository {
 	}
 }
 
-func (repo *Repository) Add(szenario *TestScenario, testgroup string, concurrency int, tags ...string) {
+func (repo *Repository) Add(scenario *TestScenario, testGroup string, concurrency int, tags ...string) {
 	repo.testScenarios = append(repo.testScenarios,
 		&repositoryEntry{
-			testgroup:    testgroup,
+			testGroup:    testGroup,
 			concurrency:  concurrency,
 			tags:         tags,
-			testScenario: szenario,
+			testScenario: scenario,
 		})
 }
 
 // Run all testScenarios, which match the supplied filter criteria.
-func (repo *Repository) RunTestScenarios(testgroupRegex string, nameRegex string, tagPatterns ...string) {
+func (repo *Repository) RunTestScenarios(testGroupRegex string, nameRegex string, tagPatterns ...string) {
 	for _, t := range repo.testScenarios {
 		if matched, err := regexp.MatchString(nameRegex, t.testScenario.Name); err == nil && matched {
-			if matched, err := regexp.MatchString(testgroupRegex, t.testgroup); err == nil && matched {
+			if matched, err := regexp.MatchString(testGroupRegex, t.testGroup); err == nil && matched {
 				if allTagsContained(t.tags, tagPatterns) {
 					runTestScenario(t)
 				}

@@ -11,12 +11,12 @@ import (
 )
 
 type HttpExec struct {
-	Method           string
-	Url              string
-	Header           http.Header
-	Body             []byte
-	expectations     []HttpExpectation
-	codeExpectionSet bool
+	Method             string
+	Url                string
+	Header             http.Header
+	Body               []byte
+	expectations       []HttpExpectation
+	codeExpectationSet bool
 }
 
 type HttpExpectation func(response *http.Response, body string) error
@@ -80,7 +80,7 @@ func (httpExec *HttpExec) HasCode(code int) *HttpExec {
 		}
 		return nil
 	})
-	httpExec.codeExpectionSet = true
+	httpExec.codeExpectationSet = true
 	return httpExec
 }
 
@@ -91,7 +91,7 @@ func (httpExec *HttpExec) HasCodeRange(min, max int) *HttpExec {
 		}
 		return nil
 	})
-	httpExec.codeExpectionSet = true
+	httpExec.codeExpectationSet = true
 	return httpExec
 }
 
@@ -148,7 +148,7 @@ func (httpExec *HttpExec) Exec(cntx Context) error {
 	}
 
 	req.Header = http.Header{}
-	for k, _ := range httpExec.Header {
+	for k := range httpExec.Header {
 		v, err := cntx.ExpandVars(string(httpExec.Header.Get(k)))
 		if err != nil {
 			return err
@@ -160,7 +160,7 @@ func (httpExec *HttpExec) Exec(cntx Context) error {
 	if err != nil {
 		return err
 	}
-	if !httpExec.codeExpectionSet && resp.StatusCode != 200 {
+	if !httpExec.codeExpectationSet && resp.StatusCode != 200 {
 		return fmt.Errorf("response code was %v, but expected 200 (by default)", resp.StatusCode)
 	}
 
