@@ -42,25 +42,25 @@ type Context interface {
 	// The channel will be closed after sending the last entry.
 	Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context
 
-        // Returns the CorrelationId
-        // CorrelationId became a http header attribute
-        CorrelationId() string
+	// Returns the CorrelationId
+	// CorrelationId became a http header attribute
+	CorrelationId() string
 }
 
 type ContextImpl struct {
-	test       map[string]string
-	env        map[string]string
-	testNumber int
-        correlationId        string
+	test          map[string]string
+	env           map[string]string
+	testNumber    int
+	correlationId string
 }
 
 // NewDefaultContext creates a new context without data
 func NewDefaultContext() *ContextImpl {
 	return &ContextImpl{
-		env:        make(map[string]string),
-		test:       make(map[string]string),
-		testNumber: 0,
-                correlationId:        "",
+		env:           make(map[string]string),
+		test:          make(map[string]string),
+		testNumber:    0,
+		correlationId: "",
 	}
 }
 
@@ -68,10 +68,10 @@ func NewDefaultContext() *ContextImpl {
 // - env base data, which ma be nil
 func NewContext(env map[string]string) *ContextImpl {
 	cntx := &ContextImpl{
-		env:        env,
-		test:       make(map[string]string),
-		testNumber: 0,
-                correlationId:        "",
+		env:           env,
+		test:          make(map[string]string),
+		testNumber:    0,
+		correlationId: "",
 	}
 	if cntx.env == nil {
 		cntx.env = make(map[string]string)
@@ -92,11 +92,11 @@ func (cntx *ContextImpl) TestNumber() int {
 }
 
 func randStringBytes(n int) string {
-        b := make([]byte, n)
-        for i := range b {
-                b[i] = letterBytes[rand.Intn(len(letterBytes))]
-        }
-        return string(b)
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
 
 func (cntx *ContextImpl) ExpandVarsNoError(tpl string) string {
@@ -108,7 +108,7 @@ func (cntx *ContextImpl) ExpandVarsNoError(tpl string) string {
 }
 
 func (cntx *ContextImpl) CorrelationId() string {
-        return cntx.correlationId
+	return cntx.correlationId
 }
 
 func (cntx *ContextImpl) ExpandVars(tpl string) (string, error) {
