@@ -7,6 +7,7 @@ import (
 // A repository is a set of test groups with tests.
 type Repository struct {
 	testScenarios []*repositoryEntry
+	runResults    []*repositoryRunResult
 }
 
 type repositoryEntry struct {
@@ -14,6 +15,11 @@ type repositoryEntry struct {
 	testGroup    string
 	tags         []string
 	testScenario *TestScenario
+}
+
+type repositoryRunResult struct {
+	scenario   *repositoryEntry
+	executions []*Execution
 }
 
 // TestFactory is a factory method which returns a test with its data.
@@ -37,22 +43,50 @@ func (repo *Repository) Add(scenario *TestScenario, testGroup string, concurrenc
 
 // Run all testScenarios, which match the supplied filter criteria.
 func (repo *Repository) RunTestScenarios(testGroupRegex string, nameRegex string, tagPatterns ...string) {
+	runResults := make([]*repositoryRunResult, 0, 0)
 	for _, t := range repo.testScenarios {
 		if matched, err := regexp.MatchString(nameRegex, t.testScenario.Name); err == nil && matched {
 			if matched, err := regexp.MatchString(testGroupRegex, t.testGroup); err == nil && matched {
 				if allTagsContained(t.tags, tagPatterns) {
-					runTestScenario(t)
+					executions := t.runTestScenario()
+					runResults = append(runResults, &repositoryRunResult{t, executions})
 				}
 			}
 		}
 	}
+	repo.runResults = runResults
 }
 
-func runTestScenario(t *repositoryEntry) {
+func (repo *Repository) GetErrorExecutions() []*Execution {
+	if repo.runResults == nil {
+		return nil
+	}
+
+	errorExecs := []*Execution{}
+	for _, result := range repo.runResults {
+		errorExecs = append(result.getErrorExecutions())
+	}
+	return errorExecs
+}
+
+func (t *repositoryEntry) runTestScenario() []*Execution {
+	executions := []*Execution{}
 	results := RunParallel(t.concurrency, t.testScenario.Exec, t.testScenario.ContextChannelFactory())
 	for result := range results {
+		executions = append(executions, result)
 		println(result.String())
 	}
+	return executions
+}
+
+func (r *repositoryRunResult) getErrorExecutions() []*Execution {
+	errorExecs := []*Execution{}
+	for _, exec := range r.executions {
+		if exec.err != nil {
+			errorExecs = append(errorExecs, exec)
+		}
+	}
+	return errorExecs
 }
 
 func allTagsContained(tags []string, tagRegex []string) bool {
