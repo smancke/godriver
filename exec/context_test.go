@@ -77,8 +77,13 @@ func Test_RandStringBytes(t *testing.T) {
 
 	correlationId1 := randStringBytes(10)
 	correlationId2 := randStringBytes(10)
+	correlationId3 := randStringBytes(-1)
+	correlationId4 := randStringBytes(0)
 
 	a.NotEqual(correlationId1, correlationId2)
+
 	a.Equal(10, len(correlationId1))
 	a.Equal(10, len(correlationId2))
+	a.Equal(0, len(correlationId3))
+	a.Equal(0, len(correlationId4))
 }
