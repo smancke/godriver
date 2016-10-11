@@ -30,6 +30,10 @@ func (execution *Execution) Duration() time.Duration {
 	return execution.end.Sub(execution.start)
 }
 
+func (execution *Execution) Error() error {
+	return execution.err
+}
+
 func (execution *Execution) String() string {
 	if execution.err == nil {
 		return fmt.Sprintf("%v %v %v", execution.Duration(), execution.jobTitle, execution.context.CorrelationId())
