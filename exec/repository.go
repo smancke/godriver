@@ -6,53 +6,50 @@ import (
 
 // A repository is a set of test groups with tests.
 type Repository struct {
-	tests []*test
+	testScenarios []*repositoryEntry
+}
+
+type repositoryEntry struct {
+	concurrency  int
+	testGroup    string
+	tags         []string
+	testScenario *TestScenario
 }
 
 // TestFactory is a factory method which returns a test with its data.
 type TestFactory func(Context) (Exec, chan Context)
 
-type test struct {
-	name      string
-	testgroup string
-	tags      []string
-	factory   TestFactory
-	cntx      Context
-}
-
 func NewRepository() *Repository {
 	return &Repository{
-		tests: make([]*test, 0, 0),
+		testScenarios: make([]*repositoryEntry, 0, 0),
 	}
 }
 
-func (repo *Repository) AddTest(testgroup string, name string, factory TestFactory, cntx Context, tags ...string) {
-	repo.tests = append(repo.tests, &test{
-		name:      name,
-		testgroup: testgroup,
-		factory:   factory,
-		tags:      tags,
-		cntx:      cntx,
-	})
+func (repo *Repository) Add(scenario *TestScenario, testGroup string, concurrency int, tags ...string) {
+	repo.testScenarios = append(repo.testScenarios,
+		&repositoryEntry{
+			testGroup:    testGroup,
+			concurrency:  concurrency,
+			tags:         tags,
+			testScenario: scenario,
+		})
 }
 
-// Run all tests, which match the supplied filter criterias.
-func (repo *Repository) RunTests(testgroupRegex string, nameRegex string, tagPatterns ...string) {
-	for _, t := range repo.tests {
-		if matched, err := regexp.MatchString(nameRegex, t.name); err == nil && matched {
-			if matched, err := regexp.MatchString(testgroupRegex, t.testgroup); err == nil && matched {
+// Run all testScenarios, which match the supplied filter criteria.
+func (repo *Repository) RunTestScenarios(testGroupRegex string, nameRegex string, tagPatterns ...string) {
+	for _, t := range repo.testScenarios {
+		if matched, err := regexp.MatchString(nameRegex, t.testScenario.Name); err == nil && matched {
+			if matched, err := regexp.MatchString(testGroupRegex, t.testGroup); err == nil && matched {
 				if allTagsContained(t.tags, tagPatterns) {
-					runTest(t)
+					runTestScenario(t)
 				}
 			}
 		}
 	}
 }
 
-func runTest(t *test) {
-	test, data := t.factory(t.cntx)
-	results := RunParallel(t.cntx.ExecutionConcurrency(), test, data)
-
+func runTestScenario(t *repositoryEntry) {
+	results := RunParallel(t.concurrency, t.testScenario.Exec, t.testScenario.ContextChannelFactory())
 	for result := range results {
 		println(result.String())
 	}
