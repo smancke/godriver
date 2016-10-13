@@ -10,12 +10,14 @@ type Execution struct {
 	end      time.Time
 	jobTitle string
 	err      error
+	context  Context
 }
 
-func StartExecution(jobTitle string) *Execution {
+func StartExecution(jobTitle string, context *Context) *Execution {
 	return &Execution{
 		start:    time.Now(),
 		jobTitle: jobTitle,
+		context:  *context,
 	}
 }
 
@@ -34,8 +36,8 @@ func (execution *Execution) Error() error {
 
 func (execution *Execution) String() string {
 	if execution.err == nil {
-		return fmt.Sprintf("%v %v", execution.Duration(), execution.jobTitle)
+		return fmt.Sprintf("%v %v %v", execution.Duration(), execution.jobTitle, execution.context.CorrelationId())
 	} else {
-		return fmt.Sprintf("%v %v: %v", execution.Duration(), execution.jobTitle, execution.err)
+		return fmt.Sprintf("%v %v: %v %v", execution.Duration(), execution.jobTitle, execution.err, execution.context.CorrelationId())
 	}
 }

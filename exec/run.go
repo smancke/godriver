@@ -52,7 +52,7 @@ func (ex *parallelExecutor) waitAndClose() {
 
 func (ex *parallelExecutor) startWorker() {
 	for cntx := range ex.contextList {
-		execution := StartExecution(ex.spec.String(cntx))
+		execution := StartExecution(ex.spec.String(cntx), &cntx)
 		err := ex.spec.Exec(cntx)
 		execution.End(err)
 		ex.results <- execution

@@ -19,6 +19,7 @@ func Test_Context_Derive(t *testing.T) {
 		"foo": "bazz",
 	})
 
+	a.NotEmpty(derived.CorrelationId())
 	a.Equal(0, cntx.TestNumber())
 	a.Equal(1, derived.TestNumber())
 	a.Equal("b", derived.Test()["a"])
@@ -69,4 +70,20 @@ func Test_Context_Populate(t *testing.T) {
 
 	_, moreItems := <-testContextChannel
 	a.False(moreItems)
+}
+
+func Test_RandStringBytes(t *testing.T) {
+	a := assert.New(t)
+
+	correlationId1 := randStringBytes(10)
+	correlationId2 := randStringBytes(10)
+	correlationId3 := randStringBytes(-1)
+	correlationId4 := randStringBytes(0)
+
+	a.NotEqual(correlationId1, correlationId2)
+
+	a.Equal(10, len(correlationId1))
+	a.Equal(10, len(correlationId2))
+	a.Equal(0, len(correlationId3))
+	a.Equal(0, len(correlationId4))
 }

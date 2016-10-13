@@ -2,8 +2,16 @@ package exec
 
 import (
 	"bytes"
+	"math/rand"
 	"text/template"
+	"time"
 )
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 type Context interface {
 	// TestNumber is the number of the actual test.
@@ -33,20 +41,25 @@ type Context interface {
 	// The creation is done in a go routine and supplied over returned channel.
 	// The channel will be closed after sending the last entry.
 	Populate(n int, createTestDataClosure func(testNumber int) map[string]string) chan Context
+
+	// CorrelationId is the id which should be transferred in the service chain
+	CorrelationId() string
 }
 
 type ContextImpl struct {
-	test       map[string]string
-	env        map[string]string
-	testNumber int
+	test          map[string]string
+	env           map[string]string
+	testNumber    int
+	correlationId string
 }
 
 // NewDefaultContext creates a new context without data
 func NewDefaultContext() *ContextImpl {
 	return &ContextImpl{
-		env:        make(map[string]string),
-		test:       make(map[string]string),
-		testNumber: 0,
+		env:           make(map[string]string),
+		test:          make(map[string]string),
+		testNumber:    0,
+		correlationId: "",
 	}
 }
 
@@ -54,9 +67,10 @@ func NewDefaultContext() *ContextImpl {
 // - env base data, which ma be nil
 func NewContext(env map[string]string) *ContextImpl {
 	cntx := &ContextImpl{
-		env:        env,
-		test:       make(map[string]string),
-		testNumber: 0,
+		env:           env,
+		test:          make(map[string]string),
+		testNumber:    0,
+		correlationId: "",
 	}
 	if cntx.env == nil {
 		cntx.env = make(map[string]string)
@@ -76,12 +90,27 @@ func (cntx *ContextImpl) TestNumber() int {
 	return cntx.testNumber
 }
 
+func randStringBytes(n int) string {
+	if n < 1 {
+		return ""
+	}
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 func (cntx *ContextImpl) ExpandVarsNoError(tpl string) string {
 	result, err := cntx.ExpandVars(tpl)
 	if err != nil {
 		return tpl
 	}
 	return result
+}
+
+func (cntx *ContextImpl) CorrelationId() string {
+	return cntx.correlationId
 }
 
 func (cntx *ContextImpl) ExpandVars(tpl string) (string, error) {
@@ -100,6 +129,7 @@ func (cntx *ContextImpl) ExpandVars(tpl string) (string, error) {
 func (cntx *ContextImpl) Derive(overrideValues map[string]string) Context {
 	contextCopy := *cntx
 	contextCopy.testNumber++
+	contextCopy.correlationId = randStringBytes(10)
 	contextCopy.test = make(map[string]string)
 	for k, v := range cntx.test {
 		contextCopy.test[k] = v
