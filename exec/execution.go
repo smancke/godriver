@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type Execution struct {
 	jobTitle string
 	err      error
 	context  Context
+	retries  uint
 }
 
 func StartExecution(jobTitle string, context *Context) *Execution {
@@ -35,9 +37,15 @@ func (execution *Execution) Error() error {
 }
 
 func (execution *Execution) String() string {
-	if execution.err == nil {
-		return fmt.Sprintf("%v %v %v", execution.Duration(), execution.jobTitle, execution.context.CorrelationId())
-	} else {
-		return fmt.Sprintf("%v %v: %v %v", execution.Duration(), execution.jobTitle, execution.err, execution.context.CorrelationId())
+	msgParts := []string{}
+	msgParts = append(msgParts, execution.Duration().String(), fmt.Sprintf("%v:", execution.jobTitle))
+	if execution.err != nil {
+		msgParts = append(msgParts, fmt.Sprintf("%v", execution.err))
 	}
+	if execution.context.Retries() > 0 {
+		msgParts = append(msgParts, fmt.Sprintf("(%v retries)", execution.context.Retries()))
+	}
+	msgParts = append(msgParts, execution.context.CorrelationId())
+
+	return strings.Join(msgParts[:], " ")
 }
