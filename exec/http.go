@@ -3,12 +3,20 @@ package exec
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
+
+var timeUnit = time.Second
+
+func setTimeUnit(newTimeUnit time.Duration) {
+	timeUnit = newTimeUnit
+}
 
 type HttpExec struct {
 	Method             string
@@ -17,6 +25,7 @@ type HttpExec struct {
 	Body               []byte
 	expectations       []HttpExpectation
 	codeExpectationSet bool
+	maxRetries         uint // maximum amount of retries to perform
 }
 
 type HttpExpectation func(response *http.Response, body string) error
@@ -36,6 +45,11 @@ func Post(url string, contentType string, body string) *HttpExec {
 		Body:   []byte(body),
 		Header: http.Header{"Content-Type": {contentType}},
 	}
+}
+
+func (httpExec *HttpExec) MaxRetries(maxRetries uint) *HttpExec {
+	httpExec.maxRetries = maxRetries
+	return httpExec
 }
 
 func (httpExec *HttpExec) WithAuthorization(authorizationHeader string) *HttpExec {
@@ -157,7 +171,32 @@ func (httpExec *HttpExec) Exec(cntx Context) error {
 	}
 	req.Header.Add("X-Correlation-Id", cntx.CorrelationId())
 
+	retries, err := doRequestWithRetry(httpExec, req)
+	// collect the number of retries for later reporting
+	cntx.SetRetries(retries)
+	return err
+}
+
+// Retries a request until httpExec.maxRetries count is exceeded
+// Returns number of retries and the (last) error
+func doRequestWithRetry(httpExec *HttpExec, req *http.Request) (uint, error) {
+	// TODO: implement different backoff strategies
+	// even better: find a suitable library that provides retries (maybe go-retro)
+	var err error
+	retries := uint(0)
+	for ; retries <= httpExec.maxRetries; retries++ {
+		err = doRequest(httpExec, req)
+		if err == nil {
+			return retries, err
+		}
+		time.Sleep(time.Duration(retries) * timeUnit)
+	}
+	return retries - 1, err
+}
+
+func doRequest(httpExec *HttpExec, req *http.Request) error {
 	resp, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		return err
 	}
