@@ -44,6 +44,8 @@ type Context interface {
 
 	// CorrelationId is the id which should be transferred in the service chain
 	CorrelationId() string
+	SetRetries(retries uint)
+	Retries() uint
 }
 
 type ContextImpl struct {
@@ -51,6 +53,7 @@ type ContextImpl struct {
 	env           map[string]string
 	testNumber    int
 	correlationId string
+	retries       uint
 }
 
 // NewDefaultContext creates a new context without data
@@ -60,6 +63,7 @@ func NewDefaultContext() *ContextImpl {
 		test:          make(map[string]string),
 		testNumber:    0,
 		correlationId: "",
+		retries:       0,
 	}
 }
 
@@ -71,6 +75,7 @@ func NewContext(env map[string]string) *ContextImpl {
 		test:          make(map[string]string),
 		testNumber:    0,
 		correlationId: "",
+		retries:       0,
 	}
 	if cntx.env == nil {
 		cntx.env = make(map[string]string)
@@ -152,4 +157,12 @@ func (cntx *ContextImpl) Populate(n int, createTestDataClosure func(testNumber i
 		close(resultChannel)
 	}()
 	return resultChannel
+}
+
+func (cntx *ContextImpl) Retries() uint {
+	return cntx.retries
+}
+
+func (cntx *ContextImpl) SetRetries(retries uint) {
+	cntx.retries = retries
 }

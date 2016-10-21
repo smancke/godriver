@@ -1,11 +1,13 @@
 package exec
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var html = `<html>
@@ -104,4 +106,78 @@ func Test_Http_Post(t *testing.T) {
 
 	a.Error(Post("h :// invalid", "application/foo", "demo data").
 		Exec(cntx))
+}
+
+// Return a server that gives several responses depending on the amount of
+// retries made
+func pollingServer() *httptest.Server {
+
+	responseProvider := func() func(resp http.ResponseWriter, req *http.Request) {
+		cnt := 0
+		return func(resp http.ResponseWriter, req *http.Request) {
+			// first resonses is NOT_FOUND
+			if cnt < 1 {
+				resp.WriteHeader(404)
+				resp.Write([]byte(html))
+			} else if cnt < 2 {
+				// second resonse is any other status
+				resp.WriteHeader(500)
+				resp.Write([]byte("expected value 1"))
+			} else {
+				// second resonse is OK
+				resp.WriteHeader(200)
+				resp.Write([]byte("expected value 2"))
+			}
+			cnt++
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(responseProvider()))
+	return server
+}
+
+// Test that retries are stopped when a given condition is met
+func Test_Retryable_Http_ConditionMet(t *testing.T) {
+	setTimeUnit(time.Millisecond)
+	defer setTimeUnit(time.Second)
+	a := assert.New(t)
+	cntx := &ContextImpl{}
+
+	server := pollingServer()
+	defer server.Close()
+
+	getExec := Get(server.URL).MaxRetries(4)
+	a.NoError(getExec.HasCode(500).Exec(cntx))
+	a.EqualValues(uint(1), cntx.retries) // one retry == two requests made
+}
+
+// Test that retries are stopped when a given condition is met
+func Test_Retryable_Http_ConditionMet2(t *testing.T) {
+	setTimeUnit(time.Millisecond)
+	defer setTimeUnit(time.Second)
+	a := assert.New(t)
+	cntx := &ContextImpl{}
+
+	server := pollingServer()
+	defer server.Close()
+
+	getExec := Get(server.URL).MaxRetries(4)
+
+	a.NoError(getExec.Contains("expected value 2").Exec(cntx))
+	a.EqualValues(uint(2), cntx.retries) // two retries == three requests made
+}
+
+// Test for hitting maxRetries
+func Test_Retryable_Http_RetriesHit(t *testing.T) {
+	setTimeUnit(time.Millisecond)
+	defer setTimeUnit(time.Second)
+	a := assert.New(t)
+	cntx := &ContextImpl{}
+
+	server := pollingServer()
+	defer server.Close()
+
+	getExec := Get(server.URL).MaxRetries(1)
+
+	a.Error(getExec.Contains("expected value 2").Exec(cntx))
+	a.EqualValues(uint(1), cntx.retries) // one retry == two requests made
 }
