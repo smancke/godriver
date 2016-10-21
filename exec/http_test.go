@@ -166,8 +166,8 @@ func Test_Retryable_Http_ConditionMet2(t *testing.T) {
 	a.EqualValues(uint(2), cntx.retries) // two retries == three requests made
 }
 
-// Test for exceeding maxRetries
-func Test_Retryable_Http_RetriesExceeded(t *testing.T) {
+// Test for hitting maxRetries
+func Test_Retryable_Http_RetriesHit(t *testing.T) {
 	setTimeUnit(time.Millisecond)
 	defer setTimeUnit(time.Second)
 	a := assert.New(t)
